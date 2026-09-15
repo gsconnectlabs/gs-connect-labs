@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Reveal, { SectionHeading } from './Reveal'
-import { Mail, Send, CheckCircle2, Loader2 } from 'lucide-react'
+import { Mail, Send, CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
 
 const services = [
   'Amazon Connect Consulting',
@@ -11,46 +11,80 @@ const services = [
 ]
 
 const EMPTY_FORM = { name: '', email: '', company: '', message: '' }
+const CONTACT_EMAIL = 'guru@gsconnectlabs.com'
 
-/** Encode form data the way Netlify Forms expects (url-encoded). */
-const encode = (data) =>
-  Object.keys(data)
-    .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(data[k])}`)
-    .join('&')
+// Web3Forms access key — a PUBLIC key, safe to expose client-side.
+// Get a free key at https://web3forms.com and set VITE_WEB3FORMS_ACCESS_KEY
+// (locally in a .env file, and in the Vercel project's Environment Variables).
+const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY
 
 export default function Contact() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
+  const [status, setStatus] = useState('idle') // 'idle' | 'success' | 'error'
+  const [errorMsg, setErrorMsg] = useState('')
 
-  const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+  const onChange = (e) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+    if (status !== 'idle') setStatus('idle') // clear feedback once editing resumes
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (isSubmitting) return
 
+    // Honest guard: if no submission endpoint is configured, do NOT claim success.
+    if (!ACCESS_KEY) {
+      setStatus('error')
+      setErrorMsg(
+        `The form isn't connected to a backend yet. Please email us directly at ${CONTACT_EMAIL}.`
+      )
+      return
+    }
+
     setIsSubmitting(true)
+    setStatus('idle')
     try {
-      // Posts to the same path; Netlify intercepts submissions for the named form
-      // on the deployed site. In local dev this resolves harmlessly.
-      await fetch('/', {
+      const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: encode({ 'form-name': 'contact', ...form }),
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: ACCESS_KEY,
+          subject: 'New enquiry from GS Connect Labs website',
+          from_name: 'GS Connect Labs Website',
+          name: form.name,
+          email: form.email,
+          company: form.company,
+          message: form.message,
+          botcheck: '', // populated only by bots (honeypot)
+        }),
       })
-      setIsSuccess(true)
-      setForm(EMPTY_FORM)
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        setStatus('success')
+        setForm(EMPTY_FORM)
+        setTimeout(() => setStatus('idle'), 6000)
+      } else {
+        setStatus('error')
+        setErrorMsg(
+          data?.message ||
+            `Something went wrong sending your message. Please email us at ${CONTACT_EMAIL}.`
+        )
+      }
     } catch (err) {
-      // Even if the network call fails (e.g. running locally), surface success
-      // for the demo so the UX stays graceful.
       console.error('Contact form submission error:', err)
-      setIsSuccess(true)
-      setForm(EMPTY_FORM)
+      setStatus('error')
+      setErrorMsg(
+        `We couldn't reach the mail service. Please check your connection or email us at ${CONTACT_EMAIL}.`
+      )
     } finally {
       setIsSubmitting(false)
-      setTimeout(() => setIsSuccess(false), 5000)
     }
   }
+
+  const isSuccess = status === 'success'
+  const isError = status === 'error'
 
   return (
     <section id="contact" className="section-pad relative overflow-hidden bg-navy-gradient">
@@ -69,7 +103,7 @@ export default function Contact() {
           <Reveal>
             <div className="flex h-full flex-col rounded-3xl glass-strong p-8 shadow-card">
               <a
-                href="mailto:guru@gsconnectlabs.com"
+                href={`mailto:${CONTACT_EMAIL}`}
                 className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 transition-all hover:border-navy-400/40"
               >
                 <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy-500/30 ring-1 ring-white/10">
@@ -78,7 +112,7 @@ export default function Contact() {
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-400">Email</p>
                   <p className="font-semibold text-white group-hover:text-navy-200">
-                    guru@gsconnectlabs.com
+                    {CONTACT_EMAIL}
                   </p>
                 </div>
               </a>
@@ -102,24 +136,18 @@ export default function Contact() {
             </div>
           </Reveal>
 
-          {/* Form — Netlify Forms ready */}
+          {/* Form — submits via Web3Forms (no server required, Vercel-compatible) */}
           <Reveal delay={0.1}>
-            <form
-              name="contact"
-              method="POST"
-              data-netlify="true"
-              netlify-honeypot="bot-field"
-              onSubmit={handleSubmit}
-              className="rounded-3xl glass-strong p-8 shadow-card"
-            >
-              {/* Required so Netlify can identify the form */}
-              <input type="hidden" name="form-name" value="contact" />
-              {/* Honeypot field for spam protection (hidden from real users) */}
-              <p className="hidden">
-                <label>
-                  Don't fill this out if you're human: <input name="bot-field" />
-                </label>
-              </p>
+            <form onSubmit={handleSubmit} className="rounded-3xl glass-strong p-8 shadow-card">
+              {/* Honeypot: hidden from real users; bots that fill it are rejected */}
+              <input
+                type="checkbox"
+                name="botcheck"
+                tabIndex={-1}
+                autoComplete="off"
+                className="hidden"
+                aria-hidden="true"
+              />
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="Name" name="name" value={form.name} onChange={onChange} required />
@@ -174,9 +202,17 @@ export default function Contact() {
                   </>
                 )}
               </button>
+
               {isSuccess && (
-                <p className="mt-3 text-center text-sm text-emerald-300">
-                  Thanks! We'll be in touch shortly.
+                <p className="mt-3 flex items-center justify-center gap-2 text-center text-sm text-emerald-300">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Thanks! Your message was sent — we'll be in touch shortly.
+                </p>
+              )}
+              {isError && (
+                <p className="mt-3 flex items-start justify-center gap-2 text-center text-sm text-red-300">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{errorMsg}</span>
                 </p>
               )}
             </form>

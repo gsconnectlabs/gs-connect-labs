@@ -45,9 +45,21 @@ src/
     Reveal.jsx          # shared animation wrapper + section heading
 ```
 
+## Contact form
+
+The contact form submits via [Web3Forms](https://web3forms.com) — no server required,
+works on any static host (including Vercel).
+
+1. Get a free access key at https://web3forms.com (public key, safe to expose).
+2. Copy `.env.example` to `.env` and set `VITE_WEB3FORMS_ACCESS_KEY`.
+3. For production, add `VITE_WEB3FORMS_ACCESS_KEY` in the Vercel project's
+   **Settings → Environment Variables**, then redeploy.
+
+If the key is missing, the form shows an error asking visitors to email directly — it
+never falsely reports success. To use a different backend instead (e.g. a Vercel
+Serverless Function + AWS SES / Resend), replace the `fetch` in
+`src/components/Contact.jsx`.
+
 ## Notes
 
-- The contact form uses a client-side demo handler. To make it live, wire `onSubmit`
-  in `src/components/Contact.jsx` to an email service (e.g. AWS SES / API Gateway +
-  Lambda) or a form backend.
 - Colors and animations are configured in `tailwind.config.js`.

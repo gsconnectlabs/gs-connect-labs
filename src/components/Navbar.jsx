@@ -21,6 +21,20 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Mobile menu links: close the menu first, then scroll to the target.
+  // Doing both at once lets the menu's collapse animation shift the layout
+  // and cancel the browser's anchor jump, so we scroll manually after the
+  // exit animation completes. scroll-padding-top (in index.css) keeps the
+  // sticky navbar from covering the target.
+  const handleMobileNav = (e, href) => {
+    e.preventDefault()
+    setOpen(false)
+    window.setTimeout(() => {
+      document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' })
+      history.replaceState(null, '', href)
+    }, 350)
+  }
+
   return (
     <motion.header
       initial={{ y: -80, opacity: 0 }}
@@ -79,7 +93,7 @@ export default function Navbar() {
                 <a
                   key={l.href}
                   href={l.href}
-                  onClick={() => setOpen(false)}
+                  onClick={(e) => handleMobileNav(e, l.href)}
                   className="rounded-lg px-4 py-3 text-sm font-medium text-slate-200 hover:bg-white/5"
                 >
                   {l.label}
@@ -87,7 +101,7 @@ export default function Navbar() {
               ))}
               <a
                 href="#contact"
-                onClick={() => setOpen(false)}
+                onClick={(e) => handleMobileNav(e, '#contact')}
                 className="btn-primary mt-2 text-sm"
               >
                 Get In Touch

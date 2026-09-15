@@ -17,17 +17,6 @@
     <title>GS Connect Labs — Amazon Connect Consulting</title>
   </head>
   <body>
-    <!--
-      Hidden static form so Netlify's build-time bot can detect the form fields.
-      The live, interactive form is rendered by React in src/components/Contact.jsx.
-    -->
-    <form name="contact" netlify netlify-honeypot="bot-field" hidden>
-      <input type="text" name="name" />
-      <input type="email" name="email" />
-      <input type="text" name="company" />
-      <textarea name="message"></textarea>
-    </form>
-
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
