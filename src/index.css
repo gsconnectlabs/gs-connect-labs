@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+
+body {
+  @apply bg-navy-950 text-slate-100 font-sans antialiased;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #070e22;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#3556b4, #152558);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5274cb;
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/[0.04] backdrop-blur-xl border border-white/10;
+  }
+  .glass-strong {
+    @apply bg-white/[0.07] backdrop-blur-2xl border border-white/15;
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-white via-navy-100 to-navy-300 bg-clip-text text-transparent;
+  }
+  .gradient-text-blue {
+    @apply bg-gradient-to-r from-navy-300 via-aws-sky to-navy-200 bg-clip-text text-transparent;
+  }
+  .section-pad {
+    @apply px-6 sm:px-10 lg:px-20 py-20 lg:py-28;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-navy-500 to-navy-700
+           px-7 py-3.5 font-semibold text-white shadow-glow transition-all duration-300
+           hover:from-navy-400 hover:to-navy-600 hover:-translate-y-0.5 hover:shadow-[0_0_50px_-8px_rgba(82,116,203,0.7)];
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5
+           px-7 py-3.5 font-semibold text-white backdrop-blur-md transition-all duration-300
+           hover:bg-white/10 hover:-translate-y-0.5 hover:border-white/40;
+  }
+}
+
+.glow-divider {
+  background: linear-gradient(90deg, transparent, rgba(82, 116, 203, 0.6), transparent);
+}
